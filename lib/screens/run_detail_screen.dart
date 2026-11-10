@@ -7,6 +7,7 @@ import '../models/run.dart';
 import '../services/geo.dart';
 import '../services/run_repository.dart';
 import '../share/run_share_card.dart';
+import '../shoes/shoes.dart';
 import '../social/backup_service.dart';
 import '../social/social_repository.dart';
 import '../widgets/route_map.dart';
@@ -95,6 +96,7 @@ class RunDetailScreen extends StatelessWidget {
                           onPressed: () => showShareSheet(context, run),
                         ),
                       ),
+                    _ShoeTile(runId: run.id!, shoeId: run.shoeId),
                     if (run.points.length > 2) _ElevationChart(points: run.points),
                     if (run.checkpoints.isNotEmpty) ..._checkpoints(context, run),
                   ],
@@ -232,4 +234,54 @@ class _ShareButtonState extends State<_ShareButton> {
         tooltip: _shared == true ? 'Ne plus partager avec mes amis' : 'Partager avec mes amis et groupes',
         onPressed: _shared == null ? null : _toggle,
       );
+}
+
+/// Paire de chaussures utilisée pour cette course (modifiable).
+class _ShoeTile extends StatefulWidget {
+  final int runId;
+  final int? shoeId;
+  const _ShoeTile({required this.runId, required this.shoeId});
+
+  @override
+  State<_ShoeTile> createState() => _ShoeTileState();
+}
+
+class _ShoeTileState extends State<_ShoeTile> {
+  List<Shoe> _shoes = [];
+  late int? _id = widget.shoeId;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<ShoeRepository>().list().then((s) {
+      if (mounted) setState(() => _shoes = s);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_shoes.isEmpty) return const SizedBox.shrink();
+    final current = _shoes.where((s) => s.id == _id).firstOrNull;
+    return ListTile(
+      leading: const Icon(Icons.hiking),
+      title: Text(current?.name ?? 'Aucune paire'),
+      subtitle: const Text('Chaussures utilisées'),
+      trailing: const Icon(Icons.edit),
+      onTap: () async {
+        final repo = context.read<ShoeRepository>();
+        final picked = await showDialog<int>(
+          context: context,
+          builder: (c) => SimpleDialog(title: const Text('Chaussures'), children: [
+            SimpleDialogOption(onPressed: () => Navigator.pop(c, -1), child: const Text('Aucune')),
+            for (final s in _shoes.where((s) => !s.retired || s.id == _id))
+              SimpleDialogOption(onPressed: () => Navigator.pop(c, s.id), child: Text('${s.name} (${s.km.round()} km)')),
+          ]),
+        );
+        if (picked == null) return;
+        final id = picked == -1 ? null : picked;
+        await repo.assign(widget.runId, id);
+        setState(() => _id = id);
+      },
+    );
+  }
 }

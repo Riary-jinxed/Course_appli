@@ -17,7 +17,25 @@ class LiveControls extends StatefulWidget {
 class _LiveControlsState extends State<LiveControls> {
   final _voice = VoiceListener();
   bool _listening = false;
+  bool _handsFree = false;
   String? _heard;
+
+  @override
+  void dispose() {
+    // Fin de course : le micro s'arrête, il n'écoute jamais en dehors d'une course.
+    _handsFree = false;
+    _voice.stop();
+    super.dispose();
+  }
+
+  /// Mode mains libres : réécoute en boucle tant que la course n'est pas terminée.
+  void _loop() {
+    if (!_handsFree || !mounted) return;
+    if (context.read<RunTracker>().state == TrackerState.idle) return;
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (_handsFree && mounted && !_voice.listening) _listen();
+    });
+  }
 
   Future<void> _listen() async {
     final tracker = context.read<RunTracker>();
@@ -29,6 +47,12 @@ class _LiveControlsState extends State<LiveControls> {
     });
     await _voice.listen((cmd, heard) async {
       if (!mounted) return;
+      // En mains libres, le silence n'est pas une erreur : on réécoute.
+      if (_handsFree && cmd == null) {
+        setState(() => _listening = false);
+        _loop();
+        return;
+      }
       setState(() {
         _listening = false;
         _heard = heard.isEmpty ? null : heard;
@@ -63,6 +87,7 @@ class _LiveControlsState extends State<LiveControls> {
               ? 'Je n\'ai rien entendu.'
               : 'Je n\'ai pas compris. Dis checkpoint, pause, stats ou musique suivante.');
       }
+      _loop();
     });
     if (mounted && !_voice.listening) setState(() => _listening = false);
   }
@@ -105,6 +130,23 @@ class _LiveControlsState extends State<LiveControls> {
                           }
                         },
                 ),
+        ),
+        IconButton(
+          tooltip: _handsFree ? 'Mains libres activé' : 'Activer les mains libres',
+          isSelected: _handsFree,
+          icon: const Icon(Icons.record_voice_over_outlined),
+          selectedIcon: const Icon(Icons.record_voice_over),
+          onPressed: () {
+            setState(() => _handsFree = !_handsFree);
+            final coach = context.read<VoiceCoach>();
+            if (_handsFree) {
+              coach.say('Mains libres activé. Je t\'écoute pendant la course.');
+              if (!_voice.listening) _listen();
+            } else {
+              _voice.stop();
+              coach.say('Mains libres désactivé.');
+            }
+          },
         ),
         Tooltip(
           message: _heard == null ? 'Commande vocale' : 'Entendu : « $_heard »',

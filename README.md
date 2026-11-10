@@ -57,6 +57,17 @@ l'URL et la clé, ou les passer avec `--dart-define=SUPABASE_URL=… --dart-defi
 - **Commandes vocales** : bouton micro pendant la course, puis « checkpoint », « pause », « reprendre »,
   « stats », « musique suivante », « chanson précédente », « coupe la musique », « motive-moi ».
 
+## Records, météo, sécurité, chaussures et assistante
+
+- **Records perso** : meilleurs temps sur 1 km, 5 km, 10 km, semi et marathon, calculés automatiquement à la fin de chaque course (annonce vocale si record battu).
+- **Météo avant la sortie** : carte en haut de l'accueil (Open-Meteo, sans clé) avec conseil de tenue.
+- **Mode sécurité** : partage de la position en direct avec un proche par SMS (lien vers `docs/live`), bouton SOS, alerte automatique si immobile trop longtemps. Nécessite d'être connecté dans l'onglet Social et GitHub Pages activé (Settings > Pages > branche `main`, dossier `/docs`).
+- **Suivi d'usure** : kilométrage par paire de chaussures avec alerte de remplacement.
+- **Mode mains libres** : le micro n'écoute que pendant une course.
+- **Assistante locale** : chat hors ligne (bilan, charge d'entraînement, récupération, records, nutrition, météo), réponses lues à voix haute en option.
+
+Après mise à jour, relancer `supabase/schema.sql` dans le SQL Editor (ajoute la table `live_sessions` et la fonction `get_live`).
+
 ## Calculs
 
 - Distance : haversine entre points GPS, points de précision > 25 m et sauts > 43 km/h ignorés,

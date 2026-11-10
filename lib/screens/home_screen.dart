@@ -6,7 +6,12 @@ import '../main.dart';
 import '../models/run.dart';
 import '../services/geo.dart';
 import '../services/run_repository.dart';
+import '../coach/coach_screen.dart';
 import '../notifications/reminders_screen.dart';
+import '../records/records_screen.dart';
+import '../safety/safety_screen.dart';
+import '../shoes/shoes_screen.dart';
+import '../weather/weather_card.dart';
 import '../social/backup_service.dart';
 import 'live_run_screen.dart';
 import 'profile_screen.dart';
@@ -60,14 +65,24 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           if (context.watch<BackupService>().available) const _SyncButton(),
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            tooltip: 'Rappels',
-            onPressed: () => _open(const RemindersScreen()),
+            icon: const Icon(Icons.auto_awesome),
+            tooltip: 'Assistante',
+            onPressed: () => _open(const CoachScreen()),
           ),
           IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: 'Profil',
-            onPressed: () => _open(const ProfileScreen()),
+            icon: const Icon(Icons.emoji_events_outlined),
+            tooltip: 'Mes records',
+            onPressed: () => _open(const RecordsScreen()),
+          ),
+          PopupMenuButton<Widget>(
+            tooltip: 'Plus',
+            onSelected: _open,
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: ProfileScreen(), child: ListTile(leading: Icon(Icons.person), title: Text('Profil'))),
+              PopupMenuItem(value: ShoesScreen(), child: ListTile(leading: Icon(Icons.hiking), title: Text('Chaussures'))),
+              PopupMenuItem(value: SafetyScreen(), child: ListTile(leading: Icon(Icons.shield), title: Text('Sécurité'))),
+              PopupMenuItem(value: RemindersScreen(), child: ListTile(leading: Icon(Icons.notifications), title: Text('Rappels'))),
+            ],
           ),
         ],
       ),
@@ -83,13 +98,19 @@ class _HomeScreenState extends State<HomeScreen> {
           if (!snap.hasData) return const Center(child: CircularProgressIndicator());
           final runs = snap.data!;
           if (runs.isEmpty) {
-            return const Center(child: Text('Aucune course pour le moment.\nLance-toi !',
-                textAlign: TextAlign.center));
+            return ListView(children: const [
+              WeatherCard(),
+              Padding(
+                padding: EdgeInsets.all(48),
+                child: Text('Aucune course pour le moment.\nLance-toi !', textAlign: TextAlign.center),
+              ),
+            ]);
           }
           final totalKm = runs.fold<double>(0, (s, r) => s + r.distanceM) / 1000;
           return ListView(
             padding: const EdgeInsets.only(bottom: 96),
             children: [
+              const WeatherCard(),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text('${runs.length} courses · ${totalKm.toStringAsFixed(1)} km au total',

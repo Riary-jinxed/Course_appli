@@ -85,6 +85,9 @@ class Run {
   final double calories;
   final int steps;
   final double maxSpeedMps;
+
+  /// Paire de chaussures utilisée (suivi de l'usure).
+  final int? shoeId;
   final List<TrackPoint> points;
   final List<Checkpoint> checkpoints;
 
@@ -98,6 +101,7 @@ class Run {
     required this.calories,
     required this.steps,
     required this.maxSpeedMps,
+    this.shoeId,
     this.points = const [],
     this.checkpoints = const [],
   });
@@ -119,6 +123,7 @@ class Run {
         'calories': calories,
         'steps': steps,
         'max_speed_mps': maxSpeedMps,
+        if (shoeId != null) 'shoe_id': shoeId,
       };
 
   factory Run.fromMap(Map<String, dynamic> m,
@@ -133,6 +138,7 @@ class Run {
         calories: (m['calories'] as num).toDouble(),
         steps: m['steps'] as int,
         maxSpeedMps: (m['max_speed_mps'] as num).toDouble(),
+        shoeId: m['shoe_id'] as int?,
         points: points,
         checkpoints: checkpoints,
       );
@@ -140,7 +146,10 @@ class Run {
   /// Format compact pour la sauvegarde en ligne (points en tableaux).
   Map<String, dynamic> toBackupJson() => {
         'v': 1,
-        ...toMap()..remove('id'),
+        // Sans la chaussure : ses identifiants sont propres à chaque téléphone.
+        ...toMap()
+          ..remove('id')
+          ..remove('shoe_id'),
         'points': [
           for (final p in points)
             [p.time.millisecondsSinceEpoch, p.lat, p.lng, p.altitude, p.accuracy, p.speed]
@@ -151,7 +160,9 @@ class Run {
   factory Run.fromBackupJson(Map<String, dynamic> j) {
     double d(dynamic v) => (v as num).toDouble();
     return Run.fromMap(
-      Map<String, dynamic>.from(j)..remove('id'),
+      Map<String, dynamic>.from(j)
+        ..remove('id')
+        ..remove('shoe_id'),
       points: [
         for (final p in (j['points'] as List).cast<List>())
           TrackPoint(

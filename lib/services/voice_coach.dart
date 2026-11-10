@@ -18,6 +18,8 @@ class VoiceCoach {
   Future<void> init() async {
     await _tts.setLanguage('fr-FR');
     await _tts.setSpeechRate(0.5);
+    // say() attend la fin de la phrase (évite que le micro entende l'annonce).
+    await _tts.awaitSpeakCompletion(true);
     // Baisse le volume de la musique pendant l'annonce au lieu de la couper.
     await _tts.setIosAudioCategory(IosTextToSpeechAudioCategory.playback,
         [IosTextToSpeechAudioCategoryOptions.duckOthers]);
