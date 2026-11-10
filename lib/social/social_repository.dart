@@ -2,12 +2,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/run.dart';
 
-/// Clés Supabase fournies à la compilation :
-/// flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_KEY=...
-/// (SUPABASE_KEY = clé publique "publishable" ou "anon" du projet).
+/// Projet Supabase de l'appli. Les valeurs sont intégrées à l'APK : tout le
+/// monde se connecte au même projet, sans configuration.
+///
+/// La clé "publishable" est publique par nature (elle est embarquée dans
+/// l'appli) : ce sont les règles RLS de supabase/schema.sql qui protègent les
+/// données. Ne jamais mettre ici la clé "secret" / "service_role".
+///
+/// On peut viser un autre projet (ex. de test) avec
+/// --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_KEY=...
 class SupabaseConfig {
-  static const url = String.fromEnvironment('SUPABASE_URL');
-  static const key = String.fromEnvironment('SUPABASE_KEY');
+  static const url = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://sugakqqbwaffqqplczvs.supabase.co',
+  );
+  static const key = String.fromEnvironment(
+    'SUPABASE_KEY',
+    defaultValue: 'sb_publishable_3mJgucqpj77vucP0btKrrQ_3QC2xxEC',
+  );
   static bool get enabled => url.isNotEmpty && key.isNotEmpty;
 }
 

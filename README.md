@@ -24,20 +24,15 @@ Application de suivi de course à pied (Flutter, Android d'abord puis iOS).
   d'invitation, partage du résumé d'une course (le tracé GPS reste sur le téléphone), fil des courses
   des amis, classement de groupe (semaine / mois / année), comparaison « moi vs un ami ».
 
-### Configurer Supabase (partie sociale)
+### Supabase (partie sociale)
 
-1. Crée un projet gratuit sur [supabase.com](https://supabase.com).
-2. Dans *SQL Editor*, colle le contenu de `supabase/schema.sql` et lance-le.
-3. Dans *Project Settings > API*, récupère l'URL du projet et la clé publique (publishable / anon).
-4. Lance l'appli avec :
+L'appli est connectée au projet Supabase `sugakqqbwaffqqplczvs` : l'URL et la clé publique sont dans
+`lib/social/social_repository.dart`. Un simple `flutter build apk` donne donc un APK prêt à l'emploi
+pour tout le monde. La clé publique peut être partagée sans risque ; la sécurité repose sur les règles
+RLS de `supabase/schema.sql`. Ne jamais mettre la clé « secret » / « service_role » dans l'appli.
 
-```bash
-flutter run --dart-define=SUPABASE_URL=https://xxxx.supabase.co --dart-define=SUPABASE_KEY=ta_cle_publique
-```
-
-Sans ces paramètres, l'appli fonctionne normalement et l'onglet Social explique comment l'activer.
-La sécurité est gérée par des règles RLS : chacun ne voit que ses courses, celles de ses amis et
-celles des membres de ses groupes.
+Mise en place d'un nouveau projet : lancer `supabase/schema.sql` dans le *SQL Editor*, puis remplacer
+l'URL et la clé, ou les passer avec `--dart-define=SUPABASE_URL=… --dart-define=SUPABASE_KEY=…`.
 
 ## Calculs
 
