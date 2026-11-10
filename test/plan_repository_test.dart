@@ -1,4 +1,7 @@
 import 'package:course_appli/models/run.dart';
+import 'package:course_appli/nutrition/models.dart';
+import 'package:course_appli/nutrition/nutrition_repository.dart';
+import 'package:course_appli/nutrition/recipes.dart';
 import 'package:course_appli/services/run_repository.dart';
 import 'package:course_appli/training/models.dart';
 import 'package:course_appli/training/plan_repository.dart';
@@ -86,5 +89,33 @@ void main() {
     final runs = RunRepository();
     expect((await runs.list()).single.distanceM, 8000);
     expect(await PlanRepository(runs).goals(), isEmpty);
+  });
+
+  test('nutrition : journal, eau, planning et calories des courses du jour', () async {
+    final runs = RunRepository();
+    final repo = NutritionRepository(runs);
+    final day = DateTime(2026, 11, 10);
+    await repo.add(FoodEntry.fromRecipe(recipes.first, day.add(const Duration(hours: 8)), MealType.breakfast));
+    await repo.add(FoodEntry.fromQuick(quickFoods.first, day, MealType.snack));
+    final e = await repo.entries(day);
+    expect(e.length, 2);
+    expect(e.last.extra, isTrue);
+    expect(await repo.entries(day.add(const Duration(days: 1))), isEmpty);
+    await repo.remove(e.first.id!);
+    expect((await repo.entries(day)).length, 1);
+
+    await repo.setWater(day, 750);
+    await repo.setWater(day, 1000);
+    expect(await repo.water(day), 1000);
+
+    await repo.setPlanned(day, MealType.lunch, recipes[6]);
+    final plan = await repo.mealPlan(day, 1);
+    expect(plan[day]![MealType.lunch]!.id, recipes[6].id);
+
+    await runs.save(run(day.add(const Duration(hours: 18)), 10));
+    await runs.save(run(day.add(const Duration(days: 1, hours: 7)), 5));
+    final (kcal, time) = await repo.runsOf(day);
+    expect(time, const Duration(minutes: 60));
+    expect(kcal, 0); // la course de test n'a pas de calories
   });
 }

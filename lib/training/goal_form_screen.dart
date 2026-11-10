@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../notifications/notification_service.dart';
 import 'models.dart';
 import 'plan_repository.dart';
 
@@ -48,7 +49,9 @@ class _GoalFormScreenState extends State<GoalFormScreen> {
       sessionsPerWeek: _spw,
       createdAt: DateTime.now(),
     );
+    final notifications = context.read<NotificationService>();
     await context.read<PlanRepository>().createGoal(goal);
+    notifications.reschedule();
     if (mounted) Navigator.pop(context);
   }
 

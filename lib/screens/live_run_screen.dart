@@ -9,6 +9,7 @@ import '../services/geo.dart';
 import '../services/run_repository.dart';
 import '../social/backup_service.dart';
 import '../training/plan_repository.dart';
+import '../voice/live_controls.dart';
 import '../widgets/route_map.dart';
 import '../widgets/stat_tile.dart';
 import 'run_detail_screen.dart';
@@ -103,6 +104,8 @@ class _LiveRunScreenState extends State<LiveRunScreen> {
               flex: 4,
               child: RouteMap(points: points, checkpoints: t.checkpoints, follow: true, controller: _map),
             ),
+            const SizedBox(height: 8),
+            const LiveControls(),
             Expanded(
               flex: 5,
               child: Padding(

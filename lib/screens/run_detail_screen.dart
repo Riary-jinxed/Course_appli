@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/run.dart';
 import '../services/geo.dart';
 import '../services/run_repository.dart';
+import '../share/run_share_card.dart';
 import '../social/backup_service.dart';
 import '../social/social_repository.dart';
 import '../widgets/route_map.dart';
@@ -26,6 +27,12 @@ class RunDetailScreen extends StatelessWidget {
           appBar: AppBar(
             title: Text(run == null ? 'Course' : DateFormat('EEEE d MMMM', 'fr_FR').format(run.startedAt)),
             actions: [
+              if (run != null && run.points.length >= 2)
+                IconButton(
+                  icon: const Icon(Icons.ios_share),
+                  tooltip: 'Partager une image',
+                  onPressed: () => showShareSheet(context, run),
+                ),
               if (run != null && SupabaseConfig.enabled) _ShareButton(run: run),
               if (run != null)
                 IconButton(
@@ -79,6 +86,15 @@ class RunDetailScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (run.points.length >= 2)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: FilledButton.icon(
+                          icon: const Icon(Icons.ios_share),
+                          label: const Text('Partager ma course (WhatsApp…)'),
+                          onPressed: () => showShareSheet(context, run),
+                        ),
+                      ),
                     if (run.points.length > 2) _ElevationChart(points: run.points),
                     if (run.checkpoints.isNotEmpty) ..._checkpoints(context, run),
                   ],
@@ -212,8 +228,8 @@ class _ShareButtonState extends State<_ShareButton> {
 
   @override
   Widget build(BuildContext context) => IconButton(
-        icon: Icon(_shared == true ? Icons.cloud_done : Icons.share),
-        tooltip: _shared == true ? 'Ne plus partager' : 'Partager',
+        icon: Icon(_shared == true ? Icons.people : Icons.people_outline),
+        tooltip: _shared == true ? 'Ne plus partager avec mes amis' : 'Partager avec mes amis et groupes',
         onPressed: _shared == null ? null : _toggle,
       );
 }

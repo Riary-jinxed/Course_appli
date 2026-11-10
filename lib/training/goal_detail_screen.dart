@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../services/geo.dart';
+import '../notifications/notification_service.dart';
 import 'models.dart';
 import 'plan_repository.dart';
 
@@ -51,7 +52,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
       ),
     );
     if (ok != true || !mounted) return;
+    final notifications = context.read<NotificationService>();
     await context.read<PlanRepository>().deleteGoal(widget.goal.id!);
+    notifications.reschedule();
     if (mounted) Navigator.pop(context);
   }
 

@@ -10,6 +10,9 @@ import 'screens/profile_screen.dart';
 import 'services/profile_repository.dart';
 import 'services/run_repository.dart';
 import 'services/voice_coach.dart';
+import 'music/spotify_controller.dart';
+import 'notifications/notification_service.dart';
+import 'nutrition/nutrition_repository.dart';
 import 'social/backup_service.dart';
 import 'social/social_repository.dart';
 import 'training/plan_repository.dart';
@@ -26,13 +29,21 @@ Future<void> main() async {
   await SocialRepository.init();
   final social = SocialRepository();
   final backup = BackupService(runs, social)..start();
+  final plans = PlanRepository(runs);
+  final notifications = NotificationService(plans);
+  await notifications.init();
+  // Reprogramme les rappels (séances à venir) à chaque lancement.
+  notifications.reschedule();
 
   runApp(MultiProvider(
     providers: [
       Provider.value(value: profiles),
       Provider.value(value: runs),
       Provider.value(value: coach),
-      Provider(create: (_) => PlanRepository(runs)),
+      Provider.value(value: plans),
+      Provider.value(value: notifications),
+      Provider(create: (_) => NutritionRepository(runs)),
+      ChangeNotifierProvider(create: (_) => SpotifyController()),
       Provider.value(value: social),
       ChangeNotifierProvider.value(value: backup),
       ChangeNotifierProvider(create: (_) => ProfileState(profiles, profile)),
