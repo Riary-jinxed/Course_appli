@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/run.dart';
 import '../services/geo.dart';
 import '../services/run_repository.dart';
+import '../social/social_repository.dart';
 import '../widgets/route_map.dart';
 import '../widgets/stat_tile.dart';
 
@@ -24,11 +25,13 @@ class RunDetailScreen extends StatelessWidget {
           appBar: AppBar(
             title: Text(run == null ? 'Course' : DateFormat('EEEE d MMMM', 'fr_FR').format(run.startedAt)),
             actions: [
+              if (run != null && SupabaseConfig.enabled) _ShareButton(run: run),
               if (run != null)
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
                   tooltip: 'Supprimer',
                   onPressed: () async {
+                    final social = context.read<SocialRepository>();
                     final ok = await showDialog<bool>(
                       context: context,
                       builder: (c) => AlertDialog(
@@ -40,6 +43,7 @@ class RunDetailScreen extends StatelessWidget {
                       ),
                     );
                     if (ok == true) {
+                      if (social.userId != null) await social.unshareRun(runId).catchError((_) {});
                       await repo.delete(runId);
                       if (context.mounted) Navigator.pop(context);
                     }
@@ -159,4 +163,54 @@ class _ElevationChart extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Partage (ou retire) le résumé de la course auprès des amis et des groupes.
+class _ShareButton extends StatefulWidget {
+  final Run run;
+  const _ShareButton({required this.run});
+
+  @override
+  State<_ShareButton> createState() => _ShareButtonState();
+}
+
+class _ShareButtonState extends State<_ShareButton> {
+  bool? _shared;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<SocialRepository>().isShared(widget.run.id!).then(
+          (v) => mounted ? setState(() => _shared = v) : null,
+          onError: (_) => mounted ? setState(() => _shared = false) : null,
+        );
+  }
+
+  Future<void> _toggle() async {
+    final repo = context.read<SocialRepository>();
+    final messenger = ScaffoldMessenger.of(context);
+    if (repo.userId == null) {
+      messenger.showSnackBar(const SnackBar(content: Text("Connecte-toi dans l'onglet Social pour partager.")));
+      return;
+    }
+    try {
+      if (_shared == true) {
+        await repo.unshareRun(widget.run.id!);
+      } else {
+        await repo.shareRun(widget.run);
+      }
+      setState(() => _shared = !(_shared ?? false));
+      messenger.showSnackBar(SnackBar(
+          content: Text(_shared! ? 'Course partagée avec tes amis et groupes' : 'Partage retiré')));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Erreur : $e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        icon: Icon(_shared == true ? Icons.cloud_done : Icons.share),
+        tooltip: _shared == true ? 'Ne plus partager' : 'Partager',
+        onPressed: _shared == null ? null : _toggle,
+      );
 }
