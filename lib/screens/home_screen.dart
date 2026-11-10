@@ -6,6 +6,8 @@ import '../main.dart';
 import '../models/run.dart';
 import '../services/geo.dart';
 import '../services/run_repository.dart';
+import '../share/run_share_card.dart';
+import '../theme/app_theme.dart';
 import '../coach/coach_screen.dart';
 import '../notifications/reminders_screen.dart';
 import '../records/records_screen.dart';
@@ -61,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final name = context.watch<ProfileState>().profile?.name ?? '';
     return Scaffold(
       appBar: AppBar(
-        title: Text(name.isEmpty ? 'Mes courses' : 'Salut $name'),
+        title: Text(name.isEmpty ? 'Mes courses' : 'Salut $name 👋'),
         actions: [
           if (context.watch<BackupService>().available) const _SyncButton(),
           IconButton(
@@ -97,38 +99,215 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context, snap) {
           if (!snap.hasData) return const Center(child: CircularProgressIndicator());
           final runs = snap.data!;
-          if (runs.isEmpty) {
-            return ListView(children: const [
-              WeatherCard(),
-              Padding(
-                padding: EdgeInsets.all(48),
-                child: Text('Aucune course pour le moment.\nLance-toi !', textAlign: TextAlign.center),
-              ),
-            ]);
-          }
-          final totalKm = runs.fold<double>(0, (s, r) => s + r.distanceM) / 1000;
           return ListView(
-            padding: const EdgeInsets.only(bottom: 96),
+            padding: const EdgeInsets.only(bottom: 104),
             children: [
+              _SummaryHero(runs: runs),
               const WeatherCard(),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('${runs.length} courses · ${totalKm.toStringAsFixed(1)} km au total',
-                    style: Theme.of(context).textTheme.titleMedium),
-              ),
-              for (final r in runs)
-                ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.directions_run)),
-                  title: Text('${(r.distanceM / 1000).toStringAsFixed(2)} km · ${formatDuration(r.movingTime)}'),
-                  subtitle: Text('${DateFormat('EEE d MMM, HH:mm', 'fr_FR').format(r.startedAt)}'
-                      ' · ${formatPace(r.avgSpeedMps)} /km'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _open(RunDetailScreen(runId: r.id!)),
+              if (runs.isEmpty)
+                const _EmptyState()
+              else ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                  child: Text('Dernières courses', style: Theme.of(context).textTheme.titleLarge),
                 ),
+                for (final r in runs) _RunCard(run: r, onTap: () => _open(RunDetailScreen(runId: r.id!))),
+              ],
             ],
           );
         },
       ),
+    );
+  }
+}
+
+/// Carte d'en-tête : kilomètres de la semaine et cumul.
+class _SummaryHero extends StatelessWidget {
+  final List<Run> runs;
+  const _SummaryHero({required this.runs});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final now = DateTime.now();
+    final monday = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+    final week = runs.where((r) => !r.startedAt.isBefore(monday)).toList();
+    final weekKm = week.fold<double>(0, (s, r) => s + r.distanceM) / 1000;
+    final weekTime = week.fold<Duration>(Duration.zero, (s, r) => s + r.movingTime);
+    final totalKm = runs.fold<double>(0, (s, r) => s + r.distanceM) / 1000;
+    // Jours de la semaine où l'on a couru (lundi = 0).
+    final days = {for (final r in week) r.startedAt.weekday - 1};
+    const white70 = Color(0xB3FFFFFF);
+    Widget mini(String label, String value) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label.toUpperCase(), style: t.labelSmall?.copyWith(color: white70)),
+          Text(value, style: t.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700, fontFeatures: tabular)),
+        ]);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: AppColors.heroGradient,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [BoxShadow(color: AppColors.ember.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 10))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('CETTE SEMAINE', style: t.labelSmall?.copyWith(color: white70, letterSpacing: 1.6)),
+        const SizedBox(height: 4),
+        Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+          Text(weekKm.toStringAsFixed(1),
+              style: t.displayMedium?.copyWith(color: Colors.white, height: 1, fontFeatures: tabular)),
+          const SizedBox(width: 6),
+          Text('km', style: t.titleLarge?.copyWith(color: white70)),
+        ]),
+        const SizedBox(height: 16),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          for (final (i, d) in const ['L', 'M', 'M', 'J', 'V', 'S', 'D'].indexed)
+            Column(children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: days.contains(i) ? Colors.white : Colors.white.withValues(alpha: 0.18),
+                ),
+                child: days.contains(i) ? const Icon(Icons.directions_run, size: 18, color: AppColors.ember) : null,
+              ),
+              const SizedBox(height: 4),
+              Text(d, style: t.labelSmall?.copyWith(color: i == now.weekday - 1 ? Colors.white : white70)),
+            ]),
+        ]),
+        const SizedBox(height: 16),
+        Row(children: [
+          Expanded(child: mini('Sorties', '${week.length}')),
+          Expanded(child: mini('Temps', formatDuration(weekTime))),
+          Expanded(child: mini('Au total', '${totalKm.toStringAsFixed(0)} km')),
+        ]),
+      ]),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 40, 32, 0),
+      child: Column(children: [
+        Container(
+          width: 88,
+          height: 88,
+          decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.12), shape: BoxShape.circle),
+          child: Icon(Icons.directions_run, size: 44, color: scheme.primary),
+        ),
+        const SizedBox(height: 16),
+        Text('Aucune course pour le moment', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text('Touche « Démarrer » et lance-toi !',
+            style: TextStyle(color: scheme.onSurfaceVariant), textAlign: TextAlign.center),
+      ]),
+    );
+  }
+}
+
+/// Une course de la liste : aperçu du tracé et chiffres clés.
+class _RunCard extends StatelessWidget {
+  final Run run;
+  final VoidCallback onTap;
+  const _RunCard({required this.run, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    Widget metric(String value, String unit) => Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(value, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w800, fontFeatures: tabular)),
+            const SizedBox(width: 2),
+            Text(unit, style: t.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+          ],
+        );
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(color: scheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(16)),
+              padding: const EdgeInsets.all(8),
+              child: _RouteThumb(runId: run.id!),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(toBeginningOfSentenceCase(DateFormat('EEEE d MMM · HH:mm', 'fr_FR').format(run.startedAt)),
+                    style: t.labelMedium?.copyWith(color: scheme.onSurfaceVariant)),
+                const SizedBox(height: 4),
+                Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+                  Text((run.distanceM / 1000).toStringAsFixed(2),
+                      style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w800, fontFeatures: tabular)),
+                  const SizedBox(width: 3),
+                  Text('km', style: t.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+                ]),
+                const SizedBox(height: 2),
+                Wrap(spacing: 14, children: [
+                  metric(formatDuration(run.movingTime), ''),
+                  metric(formatPace(run.avgSpeedMps), '/km'),
+                  if (run.elevationGainM >= 5) metric('${run.elevationGainM.round()}', 'm D+'),
+                ]),
+              ]),
+            ),
+            Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Miniature du tracé, chargée à la demande (la liste ne contient pas les points).
+class _RouteThumb extends StatefulWidget {
+  final int runId;
+  const _RouteThumb({required this.runId});
+
+  @override
+  State<_RouteThumb> createState() => _RouteThumbState();
+}
+
+class _RouteThumbState extends State<_RouteThumb> {
+  static final _cache = <int, List<TrackPoint>>{};
+  List<TrackPoint>? _points;
+
+  @override
+  void initState() {
+    super.initState();
+    _points = _cache[widget.runId];
+    if (_points == null) {
+      context.read<RunRepository>().get(widget.runId).then((r) {
+        final pts = r?.points ?? const <TrackPoint>[];
+        _cache[widget.runId] = pts;
+        if (mounted) setState(() => _points = pts);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pts = _points;
+    final color = Theme.of(context).colorScheme.primary;
+    if (pts == null || pts.length < 2) {
+      return Icon(Icons.directions_run, color: color.withValues(alpha: 0.6), size: 30);
+    }
+    return CustomPaint(
+      painter: RoutePainter(pts, const [], color, paceColors: true, strokeWidth: 2.5, glow: false),
+      size: Size.infinite,
     );
   }
 }

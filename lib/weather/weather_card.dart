@@ -27,7 +27,7 @@ class _WeatherCardState extends State<WeatherCard> {
       builder: (context, snap) {
         if (snap.hasError) {
           return Card(
-            margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: ListTile(
               leading: const Icon(Icons.cloud_off),
               title: const Text('Météo indisponible'),
@@ -39,20 +39,20 @@ class _WeatherCardState extends State<WeatherCard> {
         final w = snap.data;
         if (w == null) {
           return const Card(
-            margin: EdgeInsets.fromLTRB(12, 8, 12, 0),
+            margin: EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: ListTile(leading: CircularProgressIndicator(), title: Text('Météo…')),
           );
         }
         final tips = outfitAdvice(w);
         return Card(
-          margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: InkWell(
             onTap: () => setState(() => _expanded = !_expanded),
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  Text('${w.temp.round()}°', style: Theme.of(context).textTheme.headlineMedium),
+                  Text('${w.temp.round()}°', style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text('${w.description}\nRessenti ${w.feelsLike.round()}° · vent ${w.windKmh.round()} km/h'
