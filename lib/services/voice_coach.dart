@@ -38,10 +38,33 @@ class VoiceCoach {
     final slot = (value / interval).floor();
     if (slot <= _lastSlot) return;
     _lastSlot = slot;
+    await announceStats(distanceM: distanceM, elapsed: elapsed, avgSpeedMps: avgSpeedMps);
+  }
+
+  /// Annonce les stats tout de suite (commande vocale « stats »).
+  Future<void> announceStats({
+    required double distanceM,
+    required Duration elapsed,
+    required double avgSpeedMps,
+    double? calories,
+  }) async {
     final km = (distanceM / 1000).toStringAsFixed(2).replaceAll('.', ',');
     final pace = formatPace(avgSpeedMps).replaceAll(':', ' minutes ');
-    await say('$km kilomètres, en ${_spokenDuration(elapsed)}. Allure moyenne $pace par kilomètre.');
+    await say('$km kilomètres, en ${_spokenDuration(elapsed)}. Allure moyenne $pace par kilomètre.'
+        '${calories == null ? '' : ' ${calories.round()} calories.'}');
   }
+
+  static const _motivation = [
+    'Tu gères ! Garde ce rythme.',
+    'Chaque foulée compte, continue comme ça.',
+    'Respire, relâche les épaules, tu es solide.',
+    'Le plus dur est derrière toi. Allez !',
+    'Pense à la ligne d\'arrivée, tu y es presque.',
+    'Super boulot, tu peux être fier de toi.',
+  ];
+  int _mot = 0;
+
+  Future<void> motivate() => say(_motivation[_mot++ % _motivation.length]);
 
   String _spokenDuration(Duration d) {
     final h = d.inHours, m = d.inMinutes % 60, s = d.inSeconds % 60;

@@ -44,6 +44,19 @@ Pour que les mises à jour s'installent par-dessus, définir les secrets `ANDROI
 Mise en place d'un nouveau projet : lancer `supabase/schema.sql` dans le *SQL Editor*, puis remplacer
 l'URL et la clé, ou les passer avec `--dart-define=SUPABASE_URL=… --dart-define=SUPABASE_KEY=…`.
 
+## Partage, rappels, nutrition, musique et voix
+
+- **Partage** : image carrée du tracé et des stats d'une course, à envoyer sur WhatsApp, Instagram…
+- **Rappels** (icône cloche de l'accueil) : séances du programme, jours de course, repas, hydratation.
+- **Nutrition** (onglet) : objectif calorique (Mifflin-St Jeor + calories des courses du jour), journal
+  par repas, grignotages et extras en un geste, eau, macros, conseils de recharge en glucides avant une
+  épreuve, 21 recettes (petit-déj, plats, collations, avant course, récupération), planning de repas
+  sur 7 jours adapté aux épreuves.
+- **Spotify** : lecture, pause, morceau suivant/précédent depuis l'écran de course (appli Spotify
+  requise ; en mode développement Spotify limite à 25 utilisateurs déclarés dans le dashboard).
+- **Commandes vocales** : bouton micro pendant la course, puis « checkpoint », « pause », « reprendre »,
+  « stats », « musique suivante », « chanson précédente », « coupe la musique », « motive-moi ».
+
 ## Calculs
 
 - Distance : haversine entre points GPS, points de précision > 25 m et sauts > 43 km/h ignorés,

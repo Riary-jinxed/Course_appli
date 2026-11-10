@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../nutrition/nutrition_screen.dart';
 import '../social/social_screen.dart';
 import '../training/training_screen.dart';
 import 'home_screen.dart';
@@ -15,13 +16,19 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   int _index = 0;
   final _training = GlobalKey<TrainingScreenState>();
+  final _nutrition = GlobalKey<NutritionScreenState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: [const HomeScreen(), TrainingScreen(key: _training), const SocialScreen()],
+        children: [
+          const HomeScreen(),
+          TrainingScreen(key: _training),
+          NutritionScreen(key: _nutrition),
+          const SocialScreen(),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -29,10 +36,12 @@ class _RootScreenState extends State<RootScreen> {
           setState(() => _index = i);
           // Une course peut avoir validé une séance : on rafraîchit.
           if (i == 1) _training.currentState?.reload();
+          if (i == 2) _nutrition.currentState?.reload();
         },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.directions_run), label: 'Courses'),
           NavigationDestination(icon: Icon(Icons.calendar_month), label: 'Entraînement'),
+          NavigationDestination(icon: Icon(Icons.restaurant), label: 'Nutrition'),
           NavigationDestination(icon: Icon(Icons.people), label: 'Social'),
         ],
       ),

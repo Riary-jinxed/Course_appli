@@ -20,6 +20,19 @@ class PlanRepository {
     return rows.map(PlannedSession.fromMap).toList();
   }
 
+  /// Séances non faites des [days] prochains jours, tous objectifs confondus.
+  Future<List<PlannedSession>> upcomingSessions({int days = 30}) async {
+    final db = await runs.database;
+    final now = DateTime.now();
+    final from = DateTime(now.year, now.month, now.day);
+    final to = from.add(Duration(days: days));
+    final rows = await db.query('sessions',
+        where: 'done = 0 AND date >= ? AND date < ?',
+        whereArgs: [from.millisecondsSinceEpoch, to.millisecondsSinceEpoch],
+        orderBy: 'date');
+    return rows.map(PlannedSession.fromMap).toList();
+  }
+
   /// Volume moyen hebdo sur les 4 dernières semaines, pour calibrer le programme.
   Future<double> recentWeeklyKm() async {
     final since = DateTime.now().subtract(const Duration(days: 28));

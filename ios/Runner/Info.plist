@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Le micro sert aux commandes vocales pendant la course.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>La reconnaissance vocale permet de marquer un checkpoint ou changer de musique sans toucher le téléphone.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>spotify</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Ta position sert à tracer ta course et calculer distance, vitesse et dénivelé.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

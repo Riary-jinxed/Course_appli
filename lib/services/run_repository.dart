@@ -11,7 +11,7 @@ class RunRepository {
   Future<Database> get database async {
     return _db ??= await openDatabase(
       p.join(await getDatabasesPath(), 'course.db'),
-      version: 2,
+      version: 3,
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE runs(
@@ -39,9 +39,11 @@ class RunRepository {
           )''');
         await db.execute('CREATE INDEX idx_points_run ON points(run_id)');
         await _createV2(db);
+        await _createV3(db);
       },
       onUpgrade: (db, from, to) async {
         if (from < 2) await _createV2(db);
+        if (from < 3) await _createV3(db);
       },
       onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
     );
@@ -114,5 +116,31 @@ class RunRepository {
         done INTEGER NOT NULL DEFAULT 0
       )''');
     await db.execute('CREATE INDEX idx_sessions_goal ON sessions(goal_id, date)');
+  }
+
+  /// v3 : nutrition (journal, eau, planning de repas).
+  static Future<void> _createV3(Database db) async {
+    await db.execute('''
+      CREATE TABLE food_entries(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        day INTEGER NOT NULL,
+        meal TEXT NOT NULL,
+        name TEXT NOT NULL,
+        kcal REAL NOT NULL,
+        carbs REAL NOT NULL DEFAULT 0,
+        protein REAL NOT NULL DEFAULT 0,
+        fat REAL NOT NULL DEFAULT 0,
+        extra INTEGER NOT NULL DEFAULT 0,
+        recipe_id TEXT
+      )''');
+    await db.execute('CREATE INDEX idx_food_day ON food_entries(day)');
+    await db.execute('CREATE TABLE water(day INTEGER PRIMARY KEY, ml INTEGER NOT NULL)');
+    await db.execute('''
+      CREATE TABLE meal_plan(
+        day INTEGER NOT NULL,
+        meal TEXT NOT NULL,
+        recipe_id TEXT NOT NULL,
+        PRIMARY KEY (day, meal)
+      )''');
   }
 }

@@ -6,6 +6,7 @@ import '../main.dart';
 import '../models/run.dart';
 import '../services/geo.dart';
 import '../services/run_repository.dart';
+import '../notifications/reminders_screen.dart';
 import '../social/backup_service.dart';
 import 'live_run_screen.dart';
 import 'profile_screen.dart';
@@ -58,6 +59,11 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(name.isEmpty ? 'Mes courses' : 'Salut $name'),
         actions: [
           if (context.watch<BackupService>().available) const _SyncButton(),
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: 'Rappels',
+            onPressed: () => _open(const RemindersScreen()),
+          ),
           IconButton(
             icon: const Icon(Icons.person),
             tooltip: 'Profil',
