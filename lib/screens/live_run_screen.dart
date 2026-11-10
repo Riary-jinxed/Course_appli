@@ -16,6 +16,7 @@ import '../services/run_repository.dart';
 import '../social/backup_service.dart';
 import '../training/plan_repository.dart';
 import '../voice/live_controls.dart';
+import '../theme/app_theme.dart';
 import '../widgets/route_map.dart';
 import '../widgets/stat_tile.dart';
 import 'run_detail_screen.dart';
@@ -251,40 +252,50 @@ class _LiveRunScreenState extends State<LiveRunScreen> {
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
               ]),
             Expanded(
-              flex: 4,
               child: RouteMap(points: points, checkpoints: t.checkpoints, follow: true, controller: _map),
             ),
-            const SizedBox(height: 8),
-            const LiveControls(),
-            Expanded(
-              flex: 5,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    StatTile(label: 'Temps', value: formatDuration(t.elapsed), large: true),
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                      StatTile(
-                          label: 'Distance',
-                          value: ((m?.distanceM ?? 0) / 1000).toStringAsFixed(2),
-                          unit: 'km'),
-                      StatTile(label: 'Allure', value: formatPace(m?.currentSpeedMps ?? 0), unit: '/km'),
-                      StatTile(
-                          label: 'Vitesse moy.',
-                          value: ((m?.avgSpeedMps ?? 0) * 3.6).toStringAsFixed(1),
-                          unit: 'km/h'),
-                    ]),
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                      StatTile(label: 'Calories', value: (m?.calories ?? 0).round().toString(), unit: 'kcal'),
-                      StatTile(
-                          label: 'D+ / D-',
-                          value: '${(m?.elevationGainM ?? 0).round()} / ${(m?.elevationLossM ?? 0).round()}',
-                          unit: 'm'),
-                      StatTile(label: 'Pas', value: t.steps.toString()),
-                    ]),
-                  ],
-                ),
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 16, offset: Offset(0, -4))],
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const LiveControls(),
+                  const SizedBox(height: 4),
+                  StatTile(label: 'Temps', value: formatDuration(t.elapsed), large: true),
+                  const SizedBox(height: 16),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                    StatTile(
+                        label: 'Distance',
+                        value: ((m?.distanceM ?? 0) / 1000).toStringAsFixed(2),
+                        unit: 'km'),
+                    StatTile(label: 'Allure', value: formatPace(m?.currentSpeedMps ?? 0), unit: '/km'),
+                    StatTile(
+                        label: 'Moyenne',
+                        value: ((m?.avgSpeedMps ?? 0) * 3.6).toStringAsFixed(1),
+                        unit: 'km/h'),
+                  ]),
+                  const SizedBox(height: 12),
+                  Divider(indent: 24, endIndent: 24, color: Theme.of(context).colorScheme.outlineVariant),
+                  const SizedBox(height: 12),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                    StatTile(
+                        icon: Icons.local_fire_department,
+                        label: 'kcal',
+                        value: (m?.calories ?? 0).round().toString()),
+                    StatTile(
+                        icon: Icons.terrain,
+                        label: 'D+ / D-',
+                        value: '${(m?.elevationGainM ?? 0).round()} / ${(m?.elevationLossM ?? 0).round()}',
+                        unit: 'm'),
+                    StatTile(icon: Icons.directions_walk, label: 'Pas', value: t.steps.toString()),
+                  ]),
+                  const SizedBox(height: 8),
+                ],
               ),
             ),
           ],
@@ -303,7 +314,8 @@ class _LiveRunScreenState extends State<LiveRunScreen> {
                 ),
                 const SizedBox(width: 12),
                 IconButton.filledTonal(
-                  iconSize: 32,
+                  iconSize: 34,
+                  padding: const EdgeInsets.all(14),
                   icon: Icon(t.state == TrackerState.paused ? Icons.play_arrow : Icons.pause),
                   onPressed: t.state == TrackerState.idle
                       ? null
@@ -311,8 +323,9 @@ class _LiveRunScreenState extends State<LiveRunScreen> {
                 ),
                 const SizedBox(width: 12),
                 IconButton.filled(
-                  iconSize: 32,
-                  style: IconButton.styleFrom(backgroundColor: Colors.red),
+                  iconSize: 34,
+                  padding: const EdgeInsets.all(14),
+                  style: IconButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
                   icon: const Icon(Icons.stop),
                   onPressed: t.state == TrackerState.idle ? null : () => _finish(t),
                 ),

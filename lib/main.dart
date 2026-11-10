@@ -19,10 +19,13 @@ import 'nutrition/nutrition_repository.dart';
 import 'social/backup_service.dart';
 import 'social/social_repository.dart';
 import 'training/plan_repository.dart';
+import 'map/map_style.dart';
+import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR');
+  await MapStyleSetting.load();
   final profiles = ProfileRepository();
   final profile = await profiles.load();
   final coachSettings = await profiles.loadCoachSettings();
@@ -84,12 +87,9 @@ class CourseApp extends StatelessWidget {
       locale: const Locale('fr', 'FR'),
       supportedLocales: const [Locale('fr', 'FR'), Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(colorSchemeSeed: Colors.deepOrange, useMaterial3: true),
-      darkTheme: ThemeData(
-        colorSchemeSeed: Colors.deepOrange,
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.system,
       home: hasProfile ? const RootScreen() : const ProfileScreen(firstLaunch: true),
     );
   }

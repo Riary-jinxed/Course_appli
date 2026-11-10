@@ -9,7 +9,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/run.dart';
+import '../map/pace_colors.dart';
 import '../services/geo.dart';
+import '../theme/app_theme.dart';
 
 /// Carte visuelle d'une course (tracé + stats), au format carré, à partager.
 class RunShareCard extends StatelessWidget {
@@ -18,7 +20,7 @@ class RunShareCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFFFF6D3A);
+    const accent = AppColors.emberDark;
     const fg = Colors.white;
     final km = (run.distanceM / 1000).toStringAsFixed(2).replaceAll('.', ',');
     Widget stat(String label, String value) => Column(
@@ -31,13 +33,7 @@ class RunShareCard extends StatelessWidget {
     return Container(
       width: 360,
       height: 360,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1E2230), Color(0xFF2D1B2E)],
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: AppColors.nightGradient),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +47,7 @@ class RunShareCard extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
-              child: CustomPaint(painter: RoutePainter(run.points, run.checkpoints, accent), size: Size.infinite),
+              child: CustomPaint(painter: RoutePainter(run.points, run.checkpoints, accent, paceColors: true), size: Size.infinite),
             ),
           ),
           Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -79,7 +75,11 @@ class RoutePainter extends CustomPainter {
   final List<TrackPoint> points;
   final List<Checkpoint> checkpoints;
   final Color color;
-  RoutePainter(this.points, this.checkpoints, this.color);
+  final bool paceColors;
+  final double strokeWidth;
+  final bool glow;
+  RoutePainter(this.points, this.checkpoints, this.color,
+      {this.paceColors = false, this.strokeWidth = 4, this.glow = true});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -104,7 +104,8 @@ class RoutePainter extends CustomPainter {
       final t = tr(o);
       path.lineTo(t.dx, t.dy);
     }
-    canvas.drawPath(
+    if (glow) {
+      canvas.drawPath(
         path,
         Paint()
           ..color = color.withValues(alpha: 0.35)
@@ -113,16 +114,36 @@ class RoutePainter extends CustomPainter {
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
-    canvas.drawPath(
-        path,
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 4
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round);
-    canvas.drawCircle(tr(raw.first), 6, Paint()..color = Colors.greenAccent);
-    canvas.drawCircle(tr(raw.last), 6, Paint()..color = Colors.white);
+    }
+    if (paceColors && points.length >= 4) {
+      for (final seg in paceSegments(points)) {
+        final p = Path()..moveTo(tr(raw[seg.from]).dx, tr(raw[seg.from]).dy);
+        for (var i = seg.from + 1; i <= seg.to; i++) {
+          final t = tr(raw[i]);
+          p.lineTo(t.dx, t.dy);
+        }
+        canvas.drawPath(
+            p,
+            Paint()
+              ..color = seg.color
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = strokeWidth
+              ..strokeCap = StrokeCap.round
+              ..strokeJoin = StrokeJoin.round);
+      }
+    } else {
+      canvas.drawPath(
+          path,
+          Paint()
+            ..color = color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = strokeWidth
+            ..strokeCap = StrokeCap.round
+            ..strokeJoin = StrokeJoin.round);
+    }
+    final dot = strokeWidth + 2;
+    canvas.drawCircle(tr(raw.first), dot, Paint()..color = AppColors.mint);
+    canvas.drawCircle(tr(raw.last), dot, Paint()..color = glow ? Colors.white : color);
     for (final c in checkpoints) {
       canvas.drawCircle(tr(proj(c.lat, c.lng)), 5, Paint()..color = Colors.amber);
     }

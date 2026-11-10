@@ -10,6 +10,7 @@ import '../share/run_share_card.dart';
 import '../shoes/shoes.dart';
 import '../social/backup_service.dart';
 import '../social/social_repository.dart';
+import '../theme/app_theme.dart';
 import '../widgets/route_map.dart';
 import '../widgets/stat_tile.dart';
 
@@ -66,24 +67,72 @@ class RunDetailScreen extends StatelessWidget {
               ? const Center(child: CircularProgressIndicator())
               : ListView(
                   children: [
-                    SizedBox(height: 260, child: RouteMap(points: run.points, checkpoints: run.checkpoints)),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: SizedBox(height: 320, child: RouteMap(points: run.points, checkpoints: run.checkpoints)),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          StatTile(
+                            label: 'Distance',
+                            value: (run.distanceM / 1000).toStringAsFixed(2),
+                            unit: 'km',
+                            large: true,
+                            align: CrossAxisAlignment.start,
+                          ),
+                          const Spacer(),
+                          StatTile(label: 'Temps', value: formatDuration(run.movingTime), align: CrossAxisAlignment.end),
+                        ],
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Wrap(
-                        alignment: WrapAlignment.spaceAround,
-                        runSpacing: 16,
-                        spacing: 24,
+                      child: GridView(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          mainAxisExtent: 72,
+                        ),
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         children: [
-                          StatTile(label: 'Distance', value: (run.distanceM / 1000).toStringAsFixed(2), unit: 'km'),
-                          StatTile(label: 'Temps', value: formatDuration(run.movingTime)),
-                          StatTile(label: 'Allure moy.', value: formatPace(run.avgSpeedMps), unit: '/km'),
-                          StatTile(label: 'Vitesse moy.', value: (run.avgSpeedMps * 3.6).toStringAsFixed(1), unit: 'km/h'),
-                          StatTile(label: 'Vitesse max', value: (run.maxSpeedMps * 3.6).toStringAsFixed(1), unit: 'km/h'),
-                          StatTile(label: 'Calories', value: run.calories.round().toString(), unit: 'kcal'),
-                          StatTile(label: 'D+', value: run.elevationGainM.round().toString(), unit: 'm'),
-                          StatTile(label: 'D-', value: run.elevationLossM.round().toString(), unit: 'm'),
-                          StatTile(label: 'Pas', value: run.steps.toString()),
-                          StatTile(label: 'Cadence', value: run.cadence.round().toString(), unit: 'pas/min'),
+                          StatCard(icon: Icons.speed, label: 'Allure moy.', value: formatPace(run.avgSpeedMps), unit: '/km'),
+                          StatCard(
+                              icon: Icons.bolt,
+                              label: 'Vitesse moy. / max',
+                              value: '${(run.avgSpeedMps * 3.6).toStringAsFixed(1)} / ${(run.maxSpeedMps * 3.6).toStringAsFixed(1)}',
+                              unit: 'km/h',
+                              accent: AppColors.volt),
+                          StatCard(
+                              icon: Icons.local_fire_department,
+                              label: 'Calories',
+                              value: run.calories.round().toString(),
+                              unit: 'kcal',
+                              accent: AppColors.danger),
+                          StatCard(
+                              icon: Icons.terrain,
+                              label: 'Dénivelé + / -',
+                              value: '${run.elevationGainM.round()} / ${run.elevationLossM.round()}',
+                              unit: 'm',
+                              accent: AppColors.mint),
+                          StatCard(
+                              icon: Icons.directions_walk,
+                              label: 'Pas',
+                              value: run.steps.toString(),
+                              accent: AppColors.gold),
+                          StatCard(
+                              icon: Icons.graphic_eq,
+                              label: 'Cadence',
+                              value: run.cadence.round().toString(),
+                              unit: 'pas/min',
+                              accent: AppColors.gold),
                         ],
                       ),
                     ),
@@ -122,7 +171,7 @@ class RunDetailScreen extends StatelessWidget {
           prevT = c.elapsed;
           final speed = dt.inSeconds == 0 ? 0.0 : d / dt.inSeconds;
           return ListTile(
-            leading: const Icon(Icons.flag, color: Colors.amber),
+            leading: const Icon(Icons.flag, color: AppColors.gold),
             title: Text(c.label),
             subtitle: Text('${(c.distanceM / 1000).toStringAsFixed(2)} km à ${formatDuration(c.elapsed)}'),
             trailing: Text('+${(d / 1000).toStringAsFixed(2)} km\n${formatPace(speed)} /km',
