@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "com.riaryjinxed.course_appli"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler exige de compiler avec le SDK 37.
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
