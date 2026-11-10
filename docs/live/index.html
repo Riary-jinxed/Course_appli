@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Suivi en direct</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #6b6b70; --card: #f4f4f6; --accent: #e8552d; --sos: #c62828; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #f2f2f4; --muted: #a0a0a8; --card: #1e1e22; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    body { display: flex; flex-direction: column; }
+    header { padding: 12px 16px; }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    #status { color: var(--muted); font-size: 14px; }
+    #stats { display: flex; gap: 8px; padding: 0 16px 12px; }
+    .stat { flex: 1; background: var(--card); border-radius: 10px; padding: 8px; text-align: center; }
+    .stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+    .stat span { font-size: 12px; color: var(--muted); }
+    #map { flex: 1; min-height: 300px; }
+    #sos { display: none; background: var(--sos); color: #fff; padding: 12px 16px; font-weight: 600; }
+    #error { padding: 24px 16px; color: var(--muted); display: none; }
+  </style>
+</head>
+<body>
+  <div id="sos">🚨 Alerte SOS déclenchée par le coureur. Essaie de l'appeler, et si tu n'as pas de réponse, contacte les secours (112) avec la position ci-dessous.</div>
+  <header>
+    <h1 id="title">Suivi de course en direct</h1>
+    <div id="status">Chargement…</div>
+  </header>
+  <div id="stats">
+    <div class="stat"><b id="dist">–</b><span>km</span></div>
+    <div class="stat"><b id="time">–</b><span>temps</span></div>
+    <div class="stat"><b id="pace">–</b><span>allure /km</span></div>
+  </div>
+  <div id="map"></div>
+  <div id="error"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Clé publique Supabase (publishable) : elle ne donne accès qu'à la fonction get_live.
+    const SUPABASE_URL = 'https://sugakqqbwaffqqplczvs.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_3mJgucqpj77vucP0btKrrQ_3QC2xxEC';
+    const token = new URLSearchParams(location.search).get('t');
+    const $ = (id) => document.getElementById(id);
+
+    const map = L.map('map', { zoomControl: true }).setView([46.6, 2.4], 5);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    const line = L.polyline([], { color: '#e8552d', weight: 5 }).addTo(map);
+    let marker = null, first = true;
+
+    const fmt = (s) => {
+      const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, sec = s % 60;
+      const two = (v) => String(v).padStart(2, '0');
+      return h ? `${h}:${two(m)}:${two(sec)}` : `${two(m)}:${two(sec)}`;
+    };
+    const ago = (iso) => {
+      const s = Math.round((Date.now() - new Date(iso)) / 1000);
+      return s < 60 ? `il y a ${s} s` : `il y a ${Math.round(s / 60)} min`;
+    };
+
+    async function refresh() {
+      if (!token) { showError('Lien incomplet.'); return; }
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_live`, {
+          method: 'POST',
+          headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ t: token })
+        });
+        const d = await res.json();
+        if (!res.ok || !d) { showError('Ce suivi n\'existe pas ou a expiré (24 h max).'); return; }
+        $('title').textContent = d.name ? `${d.name} court` : 'Suivi de course en direct';
+        $('status').textContent = d.active
+          ? `En cours · position mise à jour ${ago(d.updated_at)}`
+          : `Course terminée · dernière position ${ago(d.updated_at)}`;
+        $('sos').style.display = d.sos ? 'block' : 'none';
+        $('dist').textContent = (d.distance_m / 1000).toFixed(2).replace('.', ',');
+        $('time').textContent = fmt(d.elapsed_s);
+        $('pace').textContent = d.distance_m > 50
+          ? (() => { const p = d.elapsed_s / (d.distance_m / 1000); return `${Math.floor(p / 60)}:${String(Math.round(p % 60)).padStart(2, '0')}`; })()
+          : '–';
+        const pts = (d.trail || []).map((p) => [p[0], p[1]]);
+        if (d.lat != null) pts.push([d.lat, d.lng]);
+        line.setLatLngs(pts);
+        if (pts.length) {
+          const last = pts[pts.length - 1];
+          if (!marker) marker = L.circleMarker(last, { radius: 9, color: '#fff', weight: 3, fillColor: d.sos ? '#c62828' : '#e8552d', fillOpacity: 1 }).addTo(map);
+          marker.setLatLng(last);
+          if (first) { map.setView(last, 15); first = false; }
+        }
+      } catch (e) {
+        $('status').textContent = 'Connexion perdue, nouvel essai…';
+      }
+    }
+    function showError(msg) {
+      $('error').textContent = msg; $('error').style.display = 'block';
+      $('map').style.display = 'none'; $('stats').style.display = 'none';
+      $('status').textContent = '';
+    }
+    refresh();
+    setInterval(refresh, 15000);
+  </script>
+</body>
+</html>

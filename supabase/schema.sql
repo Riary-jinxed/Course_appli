@@ -232,3 +232,42 @@ alter table public.run_backups enable row level security;
 drop policy if exists backups_own on public.run_backups;
 create policy backups_own on public.run_backups for all to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ---------------------------------------------------------------------------
+-- Mode sécurité : partage de la position en direct avec un proche.
+-- Le proche ouvre un lien contenant un jeton secret ; il n'a pas besoin de compte.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.live_sessions (
+  token uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  display_name text not null default '',
+  started_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  active boolean not null default true,
+  sos boolean not null default false,
+  lat double precision,
+  lng double precision,
+  distance_m real not null default 0,
+  elapsed_s integer not null default 0,
+  trail jsonb not null default '[]'
+);
+
+alter table public.live_sessions enable row level security;
+
+drop policy if exists live_own on public.live_sessions;
+create policy live_own on public.live_sessions for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Lecture publique par jeton (sans exposer l'identifiant du coureur), 24 h maximum.
+create or replace function public.get_live(t uuid)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'name', display_name, 'started_at', started_at, 'updated_at', updated_at,
+    'active', active, 'sos', sos, 'lat', lat, 'lng', lng,
+    'distance_m', distance_m, 'elapsed_s', elapsed_s, 'trail', trail)
+  from live_sessions
+  where token = t and started_at > now() - interval '24 hours';
+$$;
+
+grant execute on function public.get_live(uuid) to anon, authenticated;

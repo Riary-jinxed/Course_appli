@@ -11,6 +11,9 @@ import 'services/profile_repository.dart';
 import 'services/run_repository.dart';
 import 'services/voice_coach.dart';
 import 'music/spotify_controller.dart';
+import 'records/records_repository.dart';
+import 'safety/safety.dart';
+import 'shoes/shoes.dart';
 import 'notifications/notification_service.dart';
 import 'nutrition/nutrition_repository.dart';
 import 'social/backup_service.dart';
@@ -44,6 +47,9 @@ Future<void> main() async {
       Provider.value(value: notifications),
       Provider(create: (_) => NutritionRepository(runs)),
       ChangeNotifierProvider(create: (_) => SpotifyController()),
+      Provider(create: (_) => RecordsRepository(runs)),
+      Provider(create: (_) => ShoeRepository(runs)),
+      Provider(create: (_) => LiveShare(social)),
       Provider.value(value: social),
       ChangeNotifierProvider.value(value: backup),
       ChangeNotifierProvider(create: (_) => ProfileState(profiles, profile)),

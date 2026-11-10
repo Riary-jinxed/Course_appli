@@ -11,7 +11,7 @@ class RunRepository {
   Future<Database> get database async {
     return _db ??= await openDatabase(
       p.join(await getDatabasesPath(), 'course.db'),
-      version: 3,
+      version: 4,
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE runs(
@@ -40,10 +40,12 @@ class RunRepository {
         await db.execute('CREATE INDEX idx_points_run ON points(run_id)');
         await _createV2(db);
         await _createV3(db);
+        await _createV4(db);
       },
       onUpgrade: (db, from, to) async {
         if (from < 2) await _createV2(db);
         if (from < 3) await _createV3(db);
+        if (from < 4) await _createV4(db);
       },
       onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
     );
@@ -142,5 +144,27 @@ class RunRepository {
         recipe_id TEXT NOT NULL,
         PRIMARY KEY (day, meal)
       )''');
+  }
+
+  /// v4 : records (meilleurs temps par course) et chaussures.
+  static Future<void> _createV4(Database db) async {
+    await db.execute('''
+      CREATE TABLE run_bests(
+        run_id INTEGER NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+        distance_m INTEGER NOT NULL,
+        seconds REAL NOT NULL,
+        PRIMARY KEY (run_id, distance_m)
+      )''');
+    await db.execute('''
+      CREATE TABLE shoes(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        max_km REAL NOT NULL DEFAULT 700,
+        start_km REAL NOT NULL DEFAULT 0,
+        retired INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL
+      )''');
+    await db.execute('ALTER TABLE runs ADD COLUMN bests_done INTEGER NOT NULL DEFAULT 0');
+    await db.execute('ALTER TABLE runs ADD COLUMN shoe_id INTEGER REFERENCES shoes(id) ON DELETE SET NULL');
   }
 }
