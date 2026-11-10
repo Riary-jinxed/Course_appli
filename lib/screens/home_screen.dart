@@ -48,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'start_run',
         icon: const Icon(Icons.directions_run),
         label: const Text('Démarrer'),
         onPressed: () => _open(const LiveRunScreen()),

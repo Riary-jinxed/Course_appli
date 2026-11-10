@@ -5,11 +5,13 @@ import 'package:provider/provider.dart';
 
 import 'controllers/run_tracker.dart';
 import 'models/user_profile.dart';
-import 'screens/home_screen.dart';
+import 'screens/root_screen.dart';
 import 'screens/profile_screen.dart';
 import 'services/profile_repository.dart';
 import 'services/run_repository.dart';
 import 'services/voice_coach.dart';
+import 'social/social_repository.dart';
+import 'training/plan_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,12 +22,15 @@ Future<void> main() async {
   final coach = VoiceCoach(mode: coachSettings.$1, interval: coachSettings.$2);
   await coach.init();
   final runs = RunRepository();
+  await SocialRepository.init();
 
   runApp(MultiProvider(
     providers: [
       Provider.value(value: profiles),
       Provider.value(value: runs),
       Provider.value(value: coach),
+      Provider(create: (_) => PlanRepository(runs)),
+      Provider(create: (_) => SocialRepository()),
       ChangeNotifierProvider(create: (_) => ProfileState(profiles, profile)),
       ChangeNotifierProvider(create: (_) => RunTracker(repository: runs, coach: coach)),
     ],
@@ -64,7 +69,7 @@ class CourseApp extends StatelessWidget {
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      home: hasProfile ? const HomeScreen() : const ProfileScreen(firstLaunch: true),
+      home: hasProfile ? const RootScreen() : const ProfileScreen(firstLaunch: true),
     );
   }
 }
