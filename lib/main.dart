@@ -21,6 +21,7 @@ import 'social/social_repository.dart';
 import 'training/plan_repository.dart';
 import 'map/map_style.dart';
 import 'theme/app_theme.dart';
+import 'update/update_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +56,7 @@ Future<void> main() async {
       Provider(create: (_) => LiveShare(social)),
       Provider.value(value: social),
       ChangeNotifierProvider.value(value: backup),
+      ChangeNotifierProvider(create: (_) => UpdateService()..start(), lazy: false),
       ChangeNotifierProvider(create: (_) => ProfileState(profiles, profile)),
       ChangeNotifierProvider(create: (_) => RunTracker(repository: runs, coach: coach)),
     ],
