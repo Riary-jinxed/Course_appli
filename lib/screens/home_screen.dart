@@ -15,6 +15,7 @@ import '../safety/safety_screen.dart';
 import '../shoes/shoes_screen.dart';
 import '../weather/weather_card.dart';
 import '../social/backup_service.dart';
+import '../update/update_screen.dart';
 import 'live_run_screen.dart';
 import 'profile_screen.dart';
 import 'run_detail_screen.dart';
@@ -84,6 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
               PopupMenuItem(value: ShoesScreen(), child: ListTile(leading: Icon(Icons.hiking), title: Text('Chaussures'))),
               PopupMenuItem(value: SafetyScreen(), child: ListTile(leading: Icon(Icons.shield), title: Text('Sécurité'))),
               PopupMenuItem(value: RemindersScreen(), child: ListTile(leading: Icon(Icons.notifications), title: Text('Rappels'))),
+              PopupMenuItem(value: UpdateScreen(), child: ListTile(leading: Icon(Icons.system_update), title: Text('Mise à jour'))),
             ],
           ),
         ],

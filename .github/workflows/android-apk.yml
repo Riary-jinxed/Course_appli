@@ -56,15 +56,29 @@ jobs:
 
       # Publie l'APK dans la release "derniere-version", lien stable à partager :
       # https://github.com/<owner>/<repo>/releases/download/derniere-version/course.apk
+      # version.json (même release) permet à l'appli de détecter une nouvelle version :
+      # "build" = versionCode de l'APK (numéro de build GitHub Actions, toujours croissant).
       - name: Publier la release
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           NOTES="Build ${{ github.run_number }} · commit ${GITHUB_SHA::7} · $(date -u '+%d/%m/%Y %H:%M') UTC"
+          # Nouveautés : titre de la PR fusionnée, sinon titre du commit.
+          CHANGES=$(git log -1 --pretty=%B | grep -v '^Merge pull request' | grep -v '^[[:space:]]*$' | head -1)
+          jq -n \
+            --argjson build ${{ github.run_number }} \
+            --arg commit "${GITHUB_SHA::7}" \
+            --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg notes "$CHANGES" \
+            --argjson size "$(stat -c%s course.apk)" \
+            '{build: $build, commit: $commit, date: $date, notes: $notes, size: $size}' > version.json
+          cat version.json
           if gh release view derniere-version >/dev/null 2>&1; then
             gh release upload derniere-version course.apk --clobber
             gh release edit derniere-version --notes "$NOTES" --target "$GITHUB_SHA"
           else
             gh release create derniere-version course.apk --title "Dernière version" --notes "$NOTES" --target "$GITHUB_SHA"
           fi
+          # En dernier : l'appli ne voit la nouvelle version qu'une fois l'APK en ligne.
+          gh release upload derniere-version version.json --clobber

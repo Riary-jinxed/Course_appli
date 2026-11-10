@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../nutrition/nutrition_screen.dart';
 import '../social/social_screen.dart';
 import '../training/training_screen.dart';
+import '../update/update_screen.dart';
+import '../update/update_service.dart';
 import 'home_screen.dart';
 
 /// Navigation principale : Courses, Entraînement, Social.
@@ -21,13 +24,25 @@ class _RootScreenState extends State<RootScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _index,
+      body: Column(
         children: [
-          const HomeScreen(),
-          TrainingScreen(key: _training),
-          NutritionScreen(key: _nutrition),
-          const SocialScreen(),
+          // Bandeau « Nouvelle version disponible · Mettre à jour ».
+          const UpdateBanner(),
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: context.select<UpdateService, bool>((u) => u.showBanner),
+              child: IndexedStack(
+                index: _index,
+                children: [
+                  const HomeScreen(),
+                  TrainingScreen(key: _training),
+                  NutritionScreen(key: _nutrition),
+                  const SocialScreen(),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
