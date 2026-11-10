@@ -213,3 +213,22 @@ revoke execute on function public.join_group(text) from anon, public;
 grant execute on function public.join_group(text) to authenticated;
 revoke execute on function public.group_leaderboard(uuid, timestamptz) from anon, public;
 grant execute on function public.group_leaderboard(uuid, timestamptz) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Sauvegarde complète des courses (tracé GPS compris), privée à chacun.
+-- Permet de retrouver ses courses après une réinstallation ou sur un autre téléphone.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.run_backups (
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  started_at_ms bigint not null,
+  data jsonb not null,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, started_at_ms)
+);
+
+alter table public.run_backups enable row level security;
+
+drop policy if exists backups_own on public.run_backups;
+create policy backups_own on public.run_backups for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());

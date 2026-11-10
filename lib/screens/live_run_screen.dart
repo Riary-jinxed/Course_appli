@@ -7,6 +7,7 @@ import '../controllers/run_tracker.dart';
 import '../main.dart';
 import '../services/geo.dart';
 import '../services/run_repository.dart';
+import '../social/backup_service.dart';
 import '../training/plan_repository.dart';
 import '../widgets/route_map.dart';
 import '../widgets/stat_tile.dart';
@@ -35,6 +36,7 @@ class _LiveRunScreenState extends State<LiveRunScreen> {
   Future<void> _finish(RunTracker t) async {
     final plans = context.read<PlanRepository>();
     final runs = context.read<RunRepository>();
+    final backup = context.read<BackupService>();
     final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(
       context: context,
@@ -50,6 +52,7 @@ class _LiveRunScreenState extends State<LiveRunScreen> {
     final id = await t.stop();
     if (id != null) {
       final run = await runs.get(id);
+      if (run != null) backup.backup(run);
       final session = run == null ? null : await plans.matchRun(id, run);
       if (session != null) {
         messenger.showSnackBar(SnackBar(content: Text('Séance validée : ${session.type.label} ✓')));

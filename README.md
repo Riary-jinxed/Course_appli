@@ -31,6 +31,16 @@ L'appli est connectée au projet Supabase `sugakqqbwaffqqplczvs` : l'URL et la c
 pour tout le monde. La clé publique peut être partagée sans risque ; la sécurité repose sur les règles
 RLS de `supabase/schema.sql`. Ne jamais mettre la clé « secret » / « service_role » dans l'appli.
 
+**Sauvegarde des courses** : une fois connecté (onglet Social), chaque course est sauvegardée en ligne
+avec son tracé, dans la table `run_backups`, visible uniquement par son propriétaire. À la connexion sur
+un nouveau téléphone, les courses sont restaurées automatiquement. L'icône nuage de l'accueil relance
+la synchronisation.
+
+**APK** : GitHub Actions compile l'APK à chaque push sur main et le publie dans la release
+[Dernière version](https://github.com/Riary-jinxed/Course_appli/releases/tag/derniere-version).
+Pour que les mises à jour s'installent par-dessus, définir les secrets `ANDROID_KEYSTORE_BASE64` et
+`ANDROID_KEYSTORE_PASSWORD` (clé de signature fixe, alias `course`).
+
 Mise en place d'un nouveau projet : lancer `supabase/schema.sql` dans le *SQL Editor*, puis remplacer
 l'URL et la clé, ou les passer avec `--dart-define=SUPABASE_URL=… --dart-define=SUPABASE_KEY=…`.
 

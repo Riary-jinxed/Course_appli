@@ -10,6 +10,7 @@ import 'screens/profile_screen.dart';
 import 'services/profile_repository.dart';
 import 'services/run_repository.dart';
 import 'services/voice_coach.dart';
+import 'social/backup_service.dart';
 import 'social/social_repository.dart';
 import 'training/plan_repository.dart';
 
@@ -23,6 +24,8 @@ Future<void> main() async {
   await coach.init();
   final runs = RunRepository();
   await SocialRepository.init();
+  final social = SocialRepository();
+  final backup = BackupService(runs, social)..start();
 
   runApp(MultiProvider(
     providers: [
@@ -30,7 +33,8 @@ Future<void> main() async {
       Provider.value(value: runs),
       Provider.value(value: coach),
       Provider(create: (_) => PlanRepository(runs)),
-      Provider(create: (_) => SocialRepository()),
+      Provider.value(value: social),
+      ChangeNotifierProvider.value(value: backup),
       ChangeNotifierProvider(create: (_) => ProfileState(profiles, profile)),
       ChangeNotifierProvider(create: (_) => RunTracker(repository: runs, coach: coach)),
     ],

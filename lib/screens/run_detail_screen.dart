@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/run.dart';
 import '../services/geo.dart';
 import '../services/run_repository.dart';
+import '../social/backup_service.dart';
 import '../social/social_repository.dart';
 import '../widgets/route_map.dart';
 import '../widgets/stat_tile.dart';
@@ -32,6 +33,7 @@ class RunDetailScreen extends StatelessWidget {
                   tooltip: 'Supprimer',
                   onPressed: () async {
                     final social = context.read<SocialRepository>();
+                    final backup = context.read<BackupService>();
                     final ok = await showDialog<bool>(
                       context: context,
                       builder: (c) => AlertDialog(
@@ -44,6 +46,7 @@ class RunDetailScreen extends StatelessWidget {
                     );
                     if (ok == true) {
                       if (social.userId != null) await social.unshareRun(runId).catchError((_) {});
+                      await backup.remove(run.startedAt);
                       await repo.delete(runId);
                       if (context.mounted) Navigator.pop(context);
                     }

@@ -136,4 +136,36 @@ class Run {
         points: points,
         checkpoints: checkpoints,
       );
+
+  /// Format compact pour la sauvegarde en ligne (points en tableaux).
+  Map<String, dynamic> toBackupJson() => {
+        'v': 1,
+        ...toMap()..remove('id'),
+        'points': [
+          for (final p in points)
+            [p.time.millisecondsSinceEpoch, p.lat, p.lng, p.altitude, p.accuracy, p.speed]
+        ],
+        'checkpoints': [for (final c in checkpoints) c.toMap(0)..remove('run_id')],
+      };
+
+  factory Run.fromBackupJson(Map<String, dynamic> j) {
+    double d(dynamic v) => (v as num).toDouble();
+    return Run.fromMap(
+      Map<String, dynamic>.from(j)..remove('id'),
+      points: [
+        for (final p in (j['points'] as List).cast<List>())
+          TrackPoint(
+            time: DateTime.fromMillisecondsSinceEpoch((p[0] as num).toInt()),
+            lat: d(p[1]),
+            lng: d(p[2]),
+            altitude: d(p[3]),
+            accuracy: d(p[4]),
+            speed: d(p[5]),
+          )
+      ],
+      checkpoints: [
+        for (final c in (j['checkpoints'] as List).cast<Map>()) Checkpoint.fromMap(c.cast<String, dynamic>())
+      ],
+    );
+  }
 }
